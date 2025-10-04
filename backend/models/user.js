@@ -34,7 +34,11 @@ const UserSchema = new Schema({
     type: {
         type: String,
         required: true
-    }
-}, {timestamps: true});
+    },
+    loginPermission: { type: mongoose.Schema.Types.ObjectId, ref: "loginPermission", default: null },
+},
+{
+    timestamps: true
+});
 
 module.exports = mongoose.model('User', UserSchema);

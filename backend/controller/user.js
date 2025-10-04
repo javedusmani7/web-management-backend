@@ -1,4 +1,5 @@
 const UserModel = require('../models/user');
+const loginPermissionModel = require('../models/loginPermission');
 const jwt = require("jsonwebtoken");
 const CryptoJS = require('crypto-js');
 const bcrypt = require('bcryptjs');
@@ -48,14 +49,32 @@ exports.Login = async (req, res, next) => {
 exports.AddUser = async (req, res, next) => {
     try {
         // console.log(req)
-        const { user_name, user_email, userId, password, number } = req.body;
+        const { user_name, user_email, userId, password, number, googleAuthVerification= true, emailVerification= true } = req.body;
 
         const user_password = await bcrypt.hash(password, 12);
 
         let user = new UserModel({
             name: user_name, email: user_email, userId: userId.toLowerCase(), number, password: user_password, type: 'user', status: true
         });
-        await user.save();
+        const newUser = await user.save();
+
+        // Create login permission (capture the result)
+        const loginPermissionDoc = await loginPermissionModel.findOneAndUpdate(
+            { user: newUser._id },
+            { $set: {user: newUser._id, emailVerification, googleAuthVerification} },
+            { new: true, upsert: true }
+        ); 
+
+        // Now update user with loginPermission ID
+        await UserModel.findByIdAndUpdate(
+            newUser._id,
+            {
+            $set: {
+                loginPermission: loginPermissionDoc._id,
+            },
+            }
+        );
+
         const logdt = { user: req.user.username, action: 'User Create', remarks: 'User created by ' + req.user.username + '. Username: ' + userId, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ message: 'Successfully added!', status: 'success' });
@@ -68,8 +87,10 @@ exports.AddUser = async (req, res, next) => {
 
 exports.getUser = async (req, res, next) => {
     try {
-
-        const users = await UserModel.find({ type: { $ne: 'admin' } })
+        const query = { type: { $ne: 'admin' } };
+        const users = await UserModel
+            .find(query)
+            .populate("loginPermission", "emailVerification googleAuthVerification");
         res.send(users)
     } catch (error) {
         console.log(error);
@@ -201,12 +222,39 @@ exports.ActiveUser = async (req, res, next) => {
 exports.UpdateUser = async (req, res, next) => {
     try {
 
-        const { _id, data } = req.body;
+        const { _id, data, googleAuthVerification= true, emailVerification= true } = req.body;
         if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
+        
+        const query = {_id: _id}
+        const userRow = await UserModel.findOne(query);
+        if (!userRow){
+            res.status(400).send({ status: 'Bad-Request', message: 'Invalid user _id.' })
+        }
 
-        await UserModel.findByIdAndUpdate(_id, {
+        const updated = await UserModel.findByIdAndUpdate(_id, {
             name: data.user_name, email: data.user_email, userId: data.userId.toLowerCase(), number: data.number
         })
+
+        // Update login permission in the loginPermission collection
+        const updatedLoginPermission = await loginPermissionModel.findOneAndUpdate(
+            { user: userRow._id },
+            { $set: {user: userRow._id, emailVerification, googleAuthVerification} },
+            { new: true, upsert: true }
+        );
+
+        
+        // ✅ Update user document with loginPermission ID  
+        if (!userRow.loginPermission) {
+            await UserModel.findByIdAndUpdate(
+            userRow._id,
+            {
+                $set: {
+                loginPermission: updatedLoginPermission._id
+                }
+            }
+            );
+        }
+
         const logdt = { user: req.user.username, action: 'User Update', remarks: 'User Updated by ' + req.user.username + '. Username: ' + data.userId, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ status: 'success', message: 'Successfully changed.' })
