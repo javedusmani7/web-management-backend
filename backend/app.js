@@ -9,6 +9,7 @@ const WebRoutes = require('./routes/website');
 const CustomRoutes = require('./routes/custom');
 const GoogleAuthRoutes = require('./routes/googleAuth');
 const TelegramRoutes = require('./routes/telegram');
+const WhatsappRoutes = require('./routes/whatsapp');
 require("dotenv").config();
 const app = express();
 
@@ -41,5 +42,6 @@ app.use('/api/google-auth', GoogleAuthRoutes);
 app.use('/api/website', WebRoutes);
 app.use('/api/custom', CustomRoutes);
 app.use('/api/telegram', TelegramRoutes);
+app.use('/api/whatsapp', WhatsappRoutes);
 
 module.exports = app;
