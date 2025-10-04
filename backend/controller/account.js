@@ -27,10 +27,16 @@ exports.AddAccount = async(req,res,next)=>{
             }
             else
             {
-                const {accountName, password,personname, email, number,companyName, hiddenTitle} = req.body;
-
+                const {accountName, password,personname, email, number,companyName, hiddenTitle, google_authenticator_email} = req.body;
                 let account = new AccountModel({
-                    company_name: companyName, account_name: accountName,person_name:personname, account_email: email, account_password: password, account_type: hiddenTitle, number: number
+                    company_name: companyName,
+                    account_name: accountName,
+                    person_name:personname,
+                    account_email: email,
+                    google_authenticator_email: google_authenticator_email,
+                    account_password: password,
+                    account_type: hiddenTitle,
+                    number: number
                 })
                 await account.save();
                 const logdt = {user:req.user.username, action: hiddenTitle.toUpperCase()+' Account Create', remarks:hiddenTitle.toUpperCase()+' Account created by '+req.user.username+'. Account Name: '+accountName, ip: req.clientIp}
@@ -69,7 +75,16 @@ exports.UpdateAccount = async(req,res,next)=>{
         const {_id, data} = req.body;
         if(data.hiddenTitle === 'server')
             {
-                await AccountModel.findByIdAndUpdate(_id,{company_name: data.serverCompany, account_name: data.accountName,person_name:data.personname, account_email: data.email, account_password: data.password, account_type: data.hiddenTitle, number: data.number});
+                await AccountModel.findByIdAndUpdate(_id,{
+                    company_name: data.serverCompany, 
+                    account_name: data.accountName,
+                    person_name:data.personname,
+                    account_email: data.email,
+                    google_authenticator_email: data.google_authenticator_email,
+                    account_password: data.password,
+                    account_type: data.hiddenTitle,
+                    number: data.number
+                });
                 const logdt = {user:req.user.username, action: 'Server Account Update', remarks:'Server Account Update by '+req.user.username+'. Account Name: '+data.accountName, ip: req.clientIp}
                 await LogController.insertLog(logdt);
                 
@@ -77,8 +92,18 @@ exports.UpdateAccount = async(req,res,next)=>{
             }
             else
             {
-                  await AccountModel.findByIdAndUpdate(_id,{company_name: data.companyName, account_name: data.accountName,person_name:data.personname, account_email: data.email, account_password: data.password, account_type: data.hiddenTitle, number: data.number})
-                  const logdt = {user:req.user.username, action: data.hiddenTitle.toUpperCase()+' Account Update', remarks:data.hiddenTitle.toUpperCase()+' Account Update by '+req.user.username+'. Account Name: '+data.accountName, ip: req.clientIp}
+                  await AccountModel.findByIdAndUpdate(_id,{
+                    company_name: data.companyName,
+                    account_name: data.accountName,
+                    person_name:data.personname,
+                    account_email: data.email,
+                    google_authenticator_email: data.google_authenticator_email,
+                    account_password: data.password,
+                    account_type: data.hiddenTitle,
+                    number: data.number
+                })
+
+                const logdt = {user:req.user.username, action: data.hiddenTitle.toUpperCase()+' Account Update', remarks:data.hiddenTitle.toUpperCase()+' Account Update by '+req.user.username+'. Account Name: '+data.accountName, ip: req.clientIp}
                 await LogController.insertLog(logdt);
                 res.send({ message: 'Successfully Updated!', status: 'success' });
             }
