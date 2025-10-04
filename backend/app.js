@@ -8,6 +8,7 @@ const AuthRoutes = require('./routes/auth');
 const WebRoutes = require('./routes/website');
 const CustomRoutes = require('./routes/custom');
 const GoogleAuthRoutes = require('./routes/googleAuth');
+const TelegramRoutes = require('./routes/telegram');
 require("dotenv").config();
 const app = express();
 
@@ -39,5 +40,6 @@ app.use('/api/auth', AuthRoutes);
 app.use('/api/google-auth', GoogleAuthRoutes);
 app.use('/api/website', WebRoutes);
 app.use('/api/custom', CustomRoutes);
+app.use('/api/telegram', TelegramRoutes);
 
 module.exports = app;
