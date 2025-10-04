@@ -35,31 +35,42 @@ exports.Login = async (req, res) => {
     if (!isPasswordCorrect) return res.status(401).send({ message: "Password is wrong!" });
     if (!user.status && user.type === "user") return res.status(401).send({ message: "Please contact Admin" });
 
+    // Initialize steps object
+    let steps = {
+      emailVerification: false, // hardcoded as per your requirement
+      google2FAVerification: false,
+    };
+
     // Check LoginPermission for Google Auth
     let loginPermission = await LoginPermission.findOne({ user: user._id });
     let requireGoogleAuth = false; // default if no permission document
     if (loginPermission) {
       requireGoogleAuth = loginPermission.googleAuthVerification;
+    } else {
+      requireGoogleAuth = false; // default true if no document found
     }
 
     if (requireGoogleAuth) {
-      // Check if user has setup Google Auth
       if (!user.googleAuth) {
+        steps.google2FAVerification = true;
         return res.status(200).send({
           message: "Google Auth setup required",
           setup_required: true,
           userId: user._id,
+          steps,
         });
       } else {
+        steps.google2FAVerification = true;
         return res.status(200).send({
           message: "Google OTP required",
           otp_required: true,
           userId: user._id,
+          steps,
         });
       }
     }
 
-    // If Google Auth not required, return token directly
+    // If all steps are false → generate token
     const level = user.type === "admin" ? "1" : "2";
     const token = jwt.sign(
       { username: user.userId, email: user.email, id: user._id, level, permissions: user.permissions },
@@ -76,6 +87,7 @@ exports.Login = async (req, res) => {
       level,
       permissions: user.permissions,
       users_status: user.status,
+      steps, // append steps in successful login
     });
 
   } catch (err) {
@@ -83,6 +95,7 @@ exports.Login = async (req, res) => {
     res.status(500).send({ message: "Invalid authentication credentials!" });
   }
 };
+
 
 
 exports.AddUser = async (req, res, next) => {
