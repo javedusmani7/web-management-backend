@@ -18,7 +18,10 @@ router.post('/addotherAccount',[check_auth,checkPermission('ADD_ACCOUNT')],Accou
 router.get('/master-account-list',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountList);
 router.post('/update-master',[check_auth,checkPermission('EDIT_ACCOUNT')], AccountController.UpdateMasterAccount);
 router.post('/delete-master-account',[check_auth,checkPermission('DELETE_ACCOUNT')], AccountController.DeleteMasterAccount);
-router.get('/master-account-lists-by-company/:company',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountListsByCompany);
+
+router.get('/company-lists',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.CompanyLists);
+router.get('/master-account-lists/company/:company',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountListsByCompany);
+router.get('/agent-account-lists/company/:company/master_account/:master_account',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.AgentAccountListsByCompany);
 
 
 // Agent Account

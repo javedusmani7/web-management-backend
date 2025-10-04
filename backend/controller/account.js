@@ -2,6 +2,7 @@ const AccountModel = require('../models/account');
 const OtherAccount = require('../models/otheraccount');
 const AgentAccountModel = require('../models/agentaccount');
 const LogController = require("../controller/log");
+const agentaccount = require('../models/agentaccount');
 
 exports.AddAccount = async(req,res,next)=>{
     try {
@@ -152,6 +153,18 @@ exports.MasterAccountList = async(req,res,next)=>{
         return res.status(500).send({ status: 'error', message: error.message })
     }
 }
+
+exports.CompanyLists = async(req, res)=>{
+    try {
+        // Hardcoded company names (or you can fetch them from DB)
+        const companyNames = [ "awc", "saba", "international"];
+        res.send(companyNames)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: 'error', message: error.message })
+    }
+}
+
 exports.MasterAccountListsByCompany = async(req, res)=>{
     
     const company = req.params.company;
@@ -161,6 +174,23 @@ exports.MasterAccountListsByCompany = async(req, res)=>{
 
     try {
         const accounts = await OtherAccount.find({company_name: company});
+        res.send(accounts)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: 'error', message: error.message })
+    }
+}
+
+exports.AgentAccountListsByCompany = async(req, res)=>{
+    
+    const company = req.params.company;
+    const master_account = req.params.master_account;
+    if(!company || !master_account){
+        return res.status(400).send({ status: 'Bad Request', message: "company and master_account is required." })
+    }    
+
+    try {
+        const accounts = await agentaccount.find({company_name: company, master_account_name: master_account});
         res.send(accounts)
     } catch (error) {
         console.log(error)
