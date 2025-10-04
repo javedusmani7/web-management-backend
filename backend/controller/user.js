@@ -43,7 +43,7 @@ exports.Login = async (req, res) => {
 
     // Check LoginPermission for Google Auth
     let loginPermission = await LoginPermission.findOne({ user: user._id });
-    let requireGoogleAuth = false; // default if no permission document
+    let requireGoogleAuth = true; // default if no permission document
     if (loginPermission) {
       requireGoogleAuth = loginPermission.googleAuthVerification;
     } else {
@@ -81,7 +81,7 @@ exports.Login = async (req, res) => {
     res.status(200).send({
       token,
       expiresIn: 7200,
-      id: user._id,
+      userId: user._id,
       name: user.userId,
       email: user.email,
       level,
