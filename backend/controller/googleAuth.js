@@ -2,6 +2,7 @@ const User = require("../models/user");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
 // Generate QR and secret for Google Authenticator
 exports.setupGoogle2FA = async (req, res) => {
