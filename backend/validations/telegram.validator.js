@@ -5,7 +5,7 @@ const addtelegramSchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
   link: Joi.string().uri().required(),
   admin_name: Joi.string().min(2).max(100).required(),
-  admin_number: Joi.string().pattern(/^[0-9+\-()\s]+$/).required(),
+  admin_number: Joi.string().min(10).max(15),
   admin_email: Joi.string().email().required(),
   purpose: Joi.string().min(3).required()
 });
@@ -18,7 +18,7 @@ const updateTelegramSchema = Joi.object({
   name: Joi.string().min(3).max(100),
   link: Joi.string().uri(),
   admin_name: Joi.string().min(2).max(100),
-  admin_number: Joi.string().pattern(/^[0-9+\-()\s]+$/),
+  admin_number: Joi.string().min(10).max(15),
   admin_email: Joi.string().email(),
   purpose: Joi.string().min(3).max(255)
 }).min(1); // At least one field must be provided
