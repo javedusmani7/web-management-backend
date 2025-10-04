@@ -7,6 +7,7 @@ const AccountRoutes = require('./routes/account');
 const AuthRoutes = require('./routes/auth');
 const WebRoutes = require('./routes/website');
 const CustomRoutes = require('./routes/custom');
+const GoogleAuthRoutes = require('./routes/googleAuth');
 require("dotenv").config();
 const app = express();
 
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
 
 app.use('/api/account', AccountRoutes);
 app.use('/api/auth', AuthRoutes);
+app.use('/api/google-auth', GoogleAuthRoutes);
 app.use('/api/website', WebRoutes);
 app.use('/api/custom', CustomRoutes);
 

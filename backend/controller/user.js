@@ -3,6 +3,7 @@ const loginPermissionModel = require('../models/loginPermission');
 const jwt = require("jsonwebtoken");
 const CryptoJS = require('crypto-js');
 const bcrypt = require('bcryptjs');
+const LoginPermission = require("../models/loginPermission");
 require("dotenv").config();
 const LogController = require("../controller/log");
 const { updateUserValidationSchema } = require('../validations/user.validator');
@@ -22,30 +23,67 @@ function decrypt(encryptedData) {
     return decrypted.toString(CryptoJS.enc.Utf8);
 }
 
-exports.Login = async (req, res, next) => {
-    try {
-        const main_body = JSON.parse(decrypt(req.body.body_data));
-        const { userId, password } = main_body;
+exports.Login = async (req, res) => {
+  try {
+    const main_body = JSON.parse(decrypt(req.body.body_data));
+    const { userId, password } = main_body;
 
-        const check_user = await UserModel.findOne({ userId: userId.toLowerCase() });
-        if (!check_user) return res.status(401).send({ message: "Username is wrong!" });
+    const user = await UserModel.findOne({ userId: userId.toLowerCase() });
+    if (!user) return res.status(401).send({ message: "Username is wrong!" });
 
-        const check_password = await bcrypt.compare(password, check_user.password);
-        if (!check_password) return res.status(401).send({ message: "Password is wrong!" });
-        if (!check_user.status && check_user.type == 'user') return res.status(401).send({ message: "Please contact Admin" });
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) return res.status(401).send({ message: "Password is wrong!" });
+    if (!user.status && user.type === "user") return res.status(401).send({ message: "Please contact Admin" });
 
-        let level = check_user.type == 'admin' ? '1' : '2';
-
-        const token = jwt.sign(
-            { username: check_user.userId, email: check_user.email, id: check_user._id, level: level, permissions: check_user.permissions }, process.env.TOKEN_KEY, { expiresIn: "2h" }
-        );
-        res.send({ token: token, expiresIn: 7200, id: check_user._id, name: check_user.userId, email: check_user.email, level: level, permissions: check_user.permissions, users_status: check_user.status });
-
-    } catch (error) {
-        console.log(error)
-        res.status(500).send({ message: "Invalid authentication credentials!" });
+    // Check LoginPermission for Google Auth
+    let loginPermission = await LoginPermission.findOne({ user: user._id });
+    let requireGoogleAuth = false; // default if no permission document
+    if (loginPermission) {
+      requireGoogleAuth = loginPermission.googleAuthVerification;
     }
-}
+
+    if (requireGoogleAuth) {
+      // Check if user has setup Google Auth
+      if (!user.googleAuth) {
+        return res.status(200).send({
+          message: "Google Auth setup required",
+          setup_required: true,
+          userId: user._id,
+        });
+      } else {
+        return res.status(200).send({
+          message: "Google OTP required",
+          otp_required: true,
+          userId: user._id,
+        });
+      }
+    }
+
+    // If Google Auth not required, return token directly
+    const level = user.type === "admin" ? "1" : "2";
+    const token = jwt.sign(
+      { username: user.userId, email: user.email, id: user._id, level, permissions: user.permissions },
+      process.env.TOKEN_KEY,
+      { expiresIn: "2h" }
+    );
+
+    res.status(200).send({
+      token,
+      expiresIn: 7200,
+      id: user._id,
+      name: user.userId,
+      email: user.email,
+      level,
+      permissions: user.permissions,
+      users_status: user.status,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({ message: "Invalid authentication credentials!" });
+  }
+};
+
 
 exports.AddUser = async (req, res, next) => {
     try {

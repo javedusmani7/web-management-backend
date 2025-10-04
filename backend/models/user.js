@@ -36,6 +36,7 @@ const UserSchema = new Schema({
         required: true
     },
     loginPermission: { type: mongoose.Schema.Types.ObjectId, ref: "loginPermission", default: null },
+    googleAuth: { type: String, default: null }
 },
 {
     timestamps: true
