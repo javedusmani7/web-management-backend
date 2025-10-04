@@ -80,12 +80,12 @@ exports.verifyGoogleAuthOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP and userId required" });
     }
 
-    const user = await User.findById(id).select("googleAuth");
+    const user = await User.findById(id).select("userId email type permissions status googleAuth");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const googleAuth = user.googleAuth ? JSON.parse(user.googleAuth) : null;
 
-    // FIX: use secret string directly
+    // use secret string directly
     const base32Secret = googleAuth?.base32 || secret;
 
     if (!base32Secret) {
@@ -105,10 +105,43 @@ exports.verifyGoogleAuthOtp = async (req, res) => {
 
     // Save permanently if first time setup
     if (!googleAuth && secret) {
-      await User.updateOne({ _id: id }, { $set: { googleAuth: JSON.stringify({ base32: secret }) } });
+      await User.updateOne(
+        { _id: id },
+        { $set: { googleAuth: JSON.stringify({ base32: secret }) } }
+      );
     }
 
-    return res.status(200).send({ message: "OTP verified successfully", verified: true });
+    // Generate JWT token (same as in login)
+    const level = user.type === "admin" ? "1" : "2";
+    const token = jwt.sign(
+      {
+        username: user.userId,
+        email: user.email,
+        id: user._id,
+        level,
+        permissions: user.permissions,
+      },
+      process.env.TOKEN_KEY,
+      { expiresIn: "2h" }
+    );
+
+    // ✅ Send same response structure as login
+    return res.status(200).send({
+      message: "OTP verified successfully",
+      token,
+      expiresIn: 7200,
+      userId: user._id,
+      name: user.userId,
+      email: user.email,
+      level,
+      permissions: user.permissions,
+      users_status: user.status,
+      steps: {
+        emailVerification: false,
+        google2FAVerification: false, // all done now
+      },
+    });
+
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
