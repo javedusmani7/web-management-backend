@@ -154,10 +154,16 @@ exports.ShowPassword = async(req, res)=>{
 
 exports.AddMasterAccount = async(req,res,next)=>{
     try {
-        const {master_account_name, account_url,account_password, email, user_id,company_name} = req.body;
+        const {master_account_name, account_url,account_password, email, user_id,company_name, google_authenticator_email} = req.body;
 
                 let account = new OtherAccount({
-                    master_account_name: master_account_name, company_name: company_name, account_url: account_url, account_password: account_password, email: email, user_id: user_id
+                    master_account_name: master_account_name,
+                    company_name: company_name,
+                    account_url: account_url,
+                    account_password: account_password, 
+                    email: email, 
+                    google_authenticator_email: google_authenticator_email,
+                    user_id: user_id
                 })
                 await account.save();
                 const logdt = {user:req.user.username, action: 'Master Account Create', remarks:'Master Account created by '+req.user.username+'. Account Name: '+master_account_name, ip: req.clientIp}
@@ -226,7 +232,15 @@ exports.AgentAccountListsByCompany = async(req, res)=>{
 exports.UpdateMasterAccount = async(req,res,next)=>{
     try {
         const {_id, data} = req.body;
-        await OtherAccount.findByIdAndUpdate(_id,{master_account_name: data.master_account_name, company_name: data.company_name, account_url: data.account_url, account_password: data.account_password, email: data.email, user_id: data.user_id});
+        await OtherAccount.findByIdAndUpdate(_id,{
+            master_account_name: data.master_account_name,
+            company_name: data.company_name, 
+            account_url: data.account_url,
+            account_password: data.account_password,
+            email: data.email,
+            google_authenticator_email: data.google_authenticator_email,
+            user_id: data.user_id
+        });
         const logdt = {user:req.user.username, action: 'Master Account Update', remarks:'Master Account Update by '+req.user.username+'. Account Name: '+data.accountName, ip: req.clientIp}
         await LogController.insertLog(logdt);
         

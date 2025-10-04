@@ -18,6 +18,10 @@ const OtherAccountSchema = new Schema({
         type: String,
         required: true
     },
+    google_authenticator_email: {
+        type: String,
+        required: true
+    },
     account_password: {
         type: String,
         required: true
