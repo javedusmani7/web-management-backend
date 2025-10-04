@@ -268,8 +268,10 @@ exports.UpdateUser = async (req, res, next) => {
 
     try {
 
-        const { _id, data, googleAuthVerification, emailVerification } = req.body;
+        const { _id, data } = req.body;
         if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
+        const googleAuthVerification = data.hasOwnProperty('googleAuthVerification') ? data.googleAuthVerification : true;
+        const emailVerification = data.hasOwnProperty('emailVerification') ? data.emailVerification : true;
         
         const query = {_id: _id}
         const userRow = await UserModel.findOne(query);
@@ -277,6 +279,7 @@ exports.UpdateUser = async (req, res, next) => {
             res.status(400).send({ status: 'Bad-Request', message: 'Invalid user _id.' })
         }
 
+        // update user
         const updated = await UserModel.findByIdAndUpdate(_id, {
             name: data.user_name, email: data.user_email, userId: data.userId.toLowerCase(), number: data.number
         })

@@ -26,10 +26,10 @@ const updateUserValidationSchema = Joi.object({
     user_name: Joi.string().min(1).max(100).required(),
     user_email: Joi.string().email().required(),
     userId: Joi.string().alphanum().min(3).max(30).required(),
-    password: Joi.string()
-      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$'))
-      .message('Password must be at least 8 characters long, include uppercase, lowercase, number and special character')
-      .required(),
+    // password: Joi.string()
+    //   .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$'))
+    //   .message('Password must be at least 8 characters long, include uppercase, lowercase, number and special character')
+    //   .required(),
     number: Joi.string()
       .pattern(/^[0-9+ -]{7,15}$/)
       .message('Number must be valid phone number format')
