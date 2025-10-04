@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const PanelSchema = new Schema({
-    name: { type: String, required: true },
-    url_address1: { type: String, required: true },
-    url_address2: { type: String, default: null},
-    country: { type: String, required: true },
+    name: { type: String, trim: true, lowercase: true, required: true, unique: true },
+    url_address1: { type: String, trim: true, lowercase: true, required: true },
+    url_address2: { type: String, trim: true, lowercase: true, default: null},
+    country: { type: String, trim: true, lowercase: true, default: null },
 
     // Reference to the other models
     server_account: { type: mongoose.Schema.Types.ObjectId, ref: "Account", default: null },

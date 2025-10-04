@@ -3,6 +3,10 @@ const PanelModel = require('../models/motherpanel');
 const LogController = require("../controller/log");
 const LogModel = require("../models/logs");
 
+// joi validation
+const motherPanelValidationSchema = require('../validations/custom.validator');
+
+
 exports.CustomerList = async(req,res,next)=>{
     try {
         const customers = await CustomerModel.find({});
@@ -99,8 +103,22 @@ exports.PanelList = async(req,res,next)=>{
 
 
 exports.AddPanel = async(req,res,next) => {
+    // add validation
+    const { error } = motherPanelValidationSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ status: 'error', message: error.details[0].message });
+    }
+
     try {
         const {name, url_address1, url_address2, country, server_account, cloudflore_account, domain_account, company_name, company_master_account, company_agent_account} = req.body;
+
+        // check duplicate records
+        const panelRow = await PanelModel.findOne({name: name});
+        if (panelRow){
+            return res.status(400).send({ status: 'Bad-Request', message: 'Panel Name already exist.' })
+        }
+
+        // create record
         let panel = new PanelModel({
             name,
             url_address1,

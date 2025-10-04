@@ -5,6 +5,7 @@ const CryptoJS = require('crypto-js');
 const bcrypt = require('bcryptjs');
 require("dotenv").config();
 const LogController = require("../controller/log");
+const { updateUserValidationSchema } = require('../validations/user.validator');
 
 const privateKey = CryptoJS.enc.Hex.parse(process.env.PRIVATE_KEY);
 
@@ -49,7 +50,7 @@ exports.Login = async (req, res, next) => {
 exports.AddUser = async (req, res, next) => {
     try {
         // console.log(req)
-        const { user_name, user_email, userId, password, number, googleAuthVerification= true, emailVerification= true } = req.body;
+        const { user_name, user_email, userId, password, number, googleAuthVerification, emailVerification } = req.body;
 
         const user_password = await bcrypt.hash(password, 12);
 
@@ -220,9 +221,16 @@ exports.ActiveUser = async (req, res, next) => {
 }
 
 exports.UpdateUser = async (req, res, next) => {
+    
+    // add validation
+    const { error } = updateUserValidationSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({ status: 'error', message: error.details[0].message });
+    }
+
     try {
 
-        const { _id, data, googleAuthVerification= true, emailVerification= true } = req.body;
+        const { _id, data, googleAuthVerification, emailVerification } = req.body;
         if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
         
         const query = {_id: _id}
