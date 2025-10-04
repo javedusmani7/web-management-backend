@@ -7,10 +7,17 @@ exports.AddAccount = async(req,res,next)=>{
     try {
         if(req.body.hiddenTitle === 'server')
             {
-                const {accountName, password,personname, email, number,serverCompany, hiddenTitle} = req.body;
+                const {accountName, password,personname, email, number,serverCompany, hiddenTitle, google_authenticator_email} = req.body;
 
                 let account = new AccountModel({
-                    company_name: serverCompany, account_name: accountName,person_name:personname, account_email: email, account_password: password, account_type: hiddenTitle, number: number
+                    company_name: serverCompany,
+                    account_name: accountName,
+                    person_name:personname,
+                    account_email: email,
+                    google_authenticator_email: google_authenticator_email,
+                    account_password: password,
+                    account_type: hiddenTitle,
+                    number: number
                 })
                 await account.save();
                 const logdt = {user:req.user.username, action: 'Server Account Create', remarks:'Server Account created by '+req.user.username+'. Account Name: '+accountName, ip: req.clientIp}
@@ -96,6 +103,25 @@ exports.DeleteAccount = async(req,res,next)=>{
     }
 }
 
+exports.ShowPassword = async(req, res)=>{
+    
+    try {
+        const id = req.params.id;
+        
+        // check account is exist or not
+        const accountRow = await AccountModel.findOne({_id: id}).select("account_password").lean();
+        if (!accountRow){
+            res.send({ status: 'Not Found', message: 'Account not found, Invalid ID!' });
+        }
+        
+        // return result
+        res.send(accountRow)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: 'error', message: error.message })
+    }
+}
+
 
 
 // Master Account
@@ -120,6 +146,21 @@ exports.AddMasterAccount = async(req,res,next)=>{
 exports.MasterAccountList = async(req,res,next)=>{
     try {
         const accounts = await OtherAccount.find({});
+        res.send(accounts)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: 'error', message: error.message })
+    }
+}
+exports.MasterAccountListsByCompany = async(req, res)=>{
+    
+    const company = req.params.company;
+    if(!company){
+        return res.status(400).send({ status: 'Bad Request', message: "Company is required." })
+    }    
+
+    try {
+        const accounts = await OtherAccount.find({company_name: company});
         res.send(accounts)
     } catch (error) {
         console.log(error)

@@ -10,6 +10,7 @@ router.get('/account-list/:type',[check_auth,checkPermission('VIEW_ACCOUNT')], A
 router.get('/all-account',check_auth, AccountController.GetAllAccount);
 router.post('/update-account',[check_auth,checkPermission('EDIT_ACCOUNT')], AccountController.UpdateAccount);
 router.post('/delete-account',[check_auth,checkPermission('DELETE_ACCOUNT')], AccountController.DeleteAccount);
+router.get('/show-password/:id',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.ShowPassword);
 
 // Other Accounts
 
@@ -17,6 +18,7 @@ router.post('/addotherAccount',[check_auth,checkPermission('ADD_ACCOUNT')],Accou
 router.get('/master-account-list',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountList);
 router.post('/update-master',[check_auth,checkPermission('EDIT_ACCOUNT')], AccountController.UpdateMasterAccount);
 router.post('/delete-master-account',[check_auth,checkPermission('DELETE_ACCOUNT')], AccountController.DeleteMasterAccount);
+router.get('/master-account-lists-by-company/:company',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountListsByCompany);
 
 
 // Agent Account

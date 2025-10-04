@@ -22,6 +22,10 @@ const AccountSchema = new Schema({
         type: String,
         required: true
     },
+    // google_authenticator_email: {
+    //     type: String,
+    //     required: true
+    // },
     number: {
         type: String,
         required: true

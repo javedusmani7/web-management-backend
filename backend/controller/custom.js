@@ -77,8 +77,19 @@ exports.DeleteCustomer = async(req,res,next)=>{
 }
 
 exports.PanelList = async(req,res,next)=>{
+    console.log("inside panel List");
+    
     try {
-        const panels = await PanelModel.find({});
+        
+        const query = {};
+
+        const panels = await PanelModel
+        .find(query)
+        .populate("server_account", "account_name")
+        .populate("cloudflore_account", "account_name")
+        .populate("domain_account", "account_name")
+        .populate("company_master_account", "master_account_name")
+        .populate("company_agent_account", "agent_name");
         res.send(panels)
     } catch (error) {
         console.log(error);
@@ -89,8 +100,20 @@ exports.PanelList = async(req,res,next)=>{
 
 exports.AddPanel = async(req,res,next) => {
     try {
-        const {name} = req.body;
-        let panel = new PanelModel({name});
+        const {name, url_address1, url_address2, country, server_account, cloudflore_account, domain_account, company_name, company_master_account, company_agent_account} = req.body;
+        let panel = new PanelModel({
+            name,
+            url_address1,
+            url_address2,
+            country,
+            server_account,
+            cloudflore_account,
+            domain_account,
+            company_name,
+            company_master_account,
+            company_agent_account,
+        });
+
         await panel.save();
         const logdt = {user:req.user.username, action: 'MotherPanel Create', remarks:'MotherPanel created by '+req.user.username+'. MotherPanel: '+name, ip: req.clientIp}
         await LogController.insertLog(logdt);
