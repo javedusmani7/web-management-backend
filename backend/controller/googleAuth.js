@@ -3,7 +3,7 @@ const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const mongoose = require("mongoose");
 
-// Generate QR and secret
+// Generate QR and secret for Google Authenticator
 exports.setupGoogle2FA = async (req, res) => {
   try {
     const { id } = req.body;
@@ -14,14 +14,18 @@ exports.setupGoogle2FA = async (req, res) => {
     const user = await User.findById(id).select("email googleAuth");
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const issuer = "AdminPanel:3FA"; // Include issuer
+
+    // If already setup → return existing QR
     if (user.googleAuth) {
-      // Already setup → return existing QR
       const userSecret = JSON.parse(user.googleAuth);
       const qrCode = await QRCode.toDataURL(userSecret.otpauth_url);
+
       return res.status(200).send({
         message: "Already setup",
         data: {
           email: user.email,
+          issuer,
           otpauth: userSecret.otpauth_url,
           secret: userSecret.base32,
           qrCode,
@@ -29,17 +33,20 @@ exports.setupGoogle2FA = async (req, res) => {
       });
     }
 
+    // Otherwise → generate new secret
     const secret = speakeasy.generateSecret({
-      name: `AdminPanel (${user.email})`,
-      issuer: "AdminPanel",
+      name: `${issuer} (${user.email})`,
+      issuer,
       length: 20,
     });
 
     const qrCodeDataURL = await QRCode.toDataURL(secret.otpauth_url);
+
     return res.status(200).send({
       message: "Google Authenticator QR generated",
       data: {
         email: user.email,
+        issuer,
         otpauth: secret.otpauth_url,
         secret: secret.base32,
         qrCode: qrCodeDataURL,
