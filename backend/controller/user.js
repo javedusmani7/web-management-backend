@@ -7,6 +7,7 @@ const LoginPermission = require("../models/loginPermission");
 require("dotenv").config();
 const LogController = require("../controller/log");
 const { updateUserValidationSchema } = require('../validations/user.validator');
+const { generateAuthResponse } = require('../../helper/authResponse');
 
 const privateKey = CryptoJS.enc.Hex.parse(process.env.PRIVATE_KEY);
 
@@ -35,24 +36,35 @@ exports.Login = async (req, res) => {
     if (!isPasswordCorrect) return res.status(401).send({ message: "Password is wrong!" });
     if (!user.status && user.type === "user") return res.status(401).send({ message: "Please contact Admin" });
 
-    // Initialize steps object
+    // Initialize steps
     let steps = {
-      emailVerification: false, // hardcoded as per your requirement
+      emailVerification: false,
       google2FAVerification: false,
     };
 
-    // Check LoginPermission for Google Auth
-    let loginPermission = await LoginPermission.findOne({ user: user._id });
-    let requireGoogleAuth = true; // default if no permission document
-    if (loginPermission) {
-      requireGoogleAuth = loginPermission.googleAuthVerification;
-    } else {
-      requireGoogleAuth = false; // default true if no document found
+    // Fetch login permissions
+    const loginPermission = await LoginPermission.findOne({ user: user._id });
+
+    const requireEmailVerification = loginPermission?.emailVerification || false;
+    const requireGoogleAuth = loginPermission?.googleAuthVerification || false;
+
+    // Set which steps are required
+    steps.emailVerification = requireEmailVerification;
+    steps.google2FAVerification = requireGoogleAuth;
+
+    // 1️⃣ Case: Email verification required → send OTP step first
+    if (requireEmailVerification) {
+      return res.status(200).send({
+        message: "Email OTP verification required",
+        otp_required: true,
+        userId: user._id,
+        steps,
+      });
     }
 
+    // 2️⃣ Case: Google Auth required → check if setup/OTP step
     if (requireGoogleAuth) {
       if (!user.googleAuth) {
-        steps.google2FAVerification = true;
         return res.status(200).send({
           message: "Google Auth setup required",
           setup_required: true,
@@ -60,7 +72,6 @@ exports.Login = async (req, res) => {
           steps,
         });
       } else {
-        steps.google2FAVerification = true;
         return res.status(200).send({
           message: "Google OTP required",
           otp_required: true,
@@ -70,31 +81,14 @@ exports.Login = async (req, res) => {
       }
     }
 
-    // If all steps are false → generate token
-    const level = user.type === "admin" ? "1" : "2";
-    const token = jwt.sign(
-      { username: user.userId, email: user.email, id: user._id, level, permissions: user.permissions },
-      process.env.TOKEN_KEY,
-      { expiresIn: "2h" }
-    );
-
-    res.status(200).send({
-      token,
-      expiresIn: 7200,
-      userId: user._id,
-      name: user.userId,
-      email: user.email,
-      level,
-      permissions: user.permissions,
-      users_status: user.status,
-      steps, // append steps in successful login
-    });
-
+    // 3️⃣ Case: No extra verification → generate token immediately
+    return res.status(200).send(generateAuthResponse(user, steps));
   } catch (err) {
     console.log(err);
-    res.status(500).send({ message: "Invalid authentication credentials!" });
+    return res.status(500).send({ message: "Invalid authentication credentials!" });
   }
 };
+
 
 
 
