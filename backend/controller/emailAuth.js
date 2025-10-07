@@ -1,24 +1,22 @@
 const User = require("../models/user");
 const LoginPermission = require("../models/loginPermission");
+const EmailOtp = require("../models/emailOtp");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const { generateAuthResponse } = require("../../helper/authResponse");
 
-// In-memory OTP store (fallback when Redis is not used)
-const otpStore = {};
-
 // OTP settings
-const OTP_EXPIRY = 2 * 60 * 1000; // 2 minutes in milliseconds
+const OTP_EXPIRY = 2 * 60 * 1000; // 2 minutes
 const OTP_DIGITS = 4;
 
-// Helper: Generate random OTP
+// Generate random OTP
 function generateOtp() {
   const min = Math.pow(10, OTP_DIGITS - 1);
   const max = Math.pow(10, OTP_DIGITS) - 1;
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Helper: Send email using Nodemailer
+// Send OTP mail
 async function sendOtpMail(to, otp) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -50,19 +48,22 @@ exports.sendEmailOtp = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Check login permission
-    let loginPermission = await LoginPermission.findOne({ user: user._id });
-    let requireEmailVerification = true;
-    if (loginPermission) {
-      requireEmailVerification = loginPermission.emailVerification;
-    }
+    const loginPermission = await LoginPermission.findOne({ user: user._id });
+    const requireEmailVerification = loginPermission?.emailVerification ?? true;
 
     if (!requireEmailVerification) {
       return res.status(403).json({ message: "Email verification not required for this user" });
     }
 
-    // Generate OTP and store it in memory
+    // Generate OTP
     const otp = generateOtp();
-    otpStore[userId] = { otp: String(otp), expiresAt: Date.now() + OTP_EXPIRY };
+
+    // Save OTP in MongoDB
+    await EmailOtp.findOneAndUpdate(
+      { userId },
+      { otp: String(otp), expiresAt: new Date(Date.now() + OTP_EXPIRY) },
+      { upsert: true, new: true }
+    );
 
     // Send email
     await sendOtpMail(user.email, otp);
@@ -70,9 +71,10 @@ exports.sendEmailOtp = async (req, res) => {
     return res.status(200).json({
       message: "OTP sent successfully to registered email",
       email: user.email,
+      otp: otp, // ⚠️ remove in production
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error sending OTP:", err);
     return res.status(500).json({ message: "Failed to send OTP", error: err.message });
   }
 };
@@ -90,29 +92,30 @@ exports.verifyEmailOtp = async (req, res) => {
     const user = await User.findById(userId).select("userId email type permissions status");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Verify OTP
-    const stored = otpStore[userId];
-    if (!stored) return res.status(401).json({ message: "OTP expired or not found" });
+    // Find OTP record in MongoDB
+    const record = await EmailOtp.findOne({ userId });
+    if (!record) return res.status(401).json({ message: "OTP expired or not found" });
 
-    // ✅ Use safe timestamp comparison
-    const now = Date.now();
-    if (now > Number(stored.expiresAt)) {
-      delete otpStore[userId];
+    // Check expiry
+    if (Date.now() > record.expiresAt.getTime()) {
+      await EmailOtp.deleteOne({ _id: record._id });
       return res.status(401).json({ message: "OTP expired" });
     }
 
-    if (stored.otp !== String(otp)) {
+    // Check value
+    if (record.otp !== String(otp)) {
       return res.status(403).json({ message: "Invalid OTP" });
     }
 
-    delete otpStore[userId]; // remove OTP after use
+    // Delete OTP after verification
+    await EmailOtp.deleteOne({ _id: record._id });
 
     // Fetch login permissions
     const loginPermission = await LoginPermission.findOne({ user: user._id });
     const requireGoogleAuth = loginPermission?.googleAuthVerification || false;
 
     if (requireGoogleAuth) {
-      return res.status(200).send({
+      return res.status(200).json({
         message: "Email OTP verified successfully. Google OTP required next.",
         otp_required: true,
         userId: user._id,
@@ -123,21 +126,19 @@ exports.verifyEmailOtp = async (req, res) => {
       });
     }
 
-    // Generate final token and login success
-    return res.status(200).send({
+    // Generate final token
+    return res.status(200).json({
       message: "Email verified successfully",
       ...generateAuthResponse(user),
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error verifying OTP:", err);
     return res.status(500).json({ message: "Failed to verify OTP", error: err.message });
   }
 };
 
-
-
 /**
- * 🔄 Resend OTP to user's email
+ * 🔄 Resend OTP
  */
 exports.resendEmailOtp = async (req, res) => {
   try {
@@ -147,29 +148,31 @@ exports.resendEmailOtp = async (req, res) => {
     const user = await User.findById(userId).select("email");
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Check login permission
-    let loginPermission = await LoginPermission.findOne({ user: user._id });
-    let requireEmailVerification = true;
-    if (loginPermission) requireEmailVerification = loginPermission.emailVerification;
+    const loginPermission = await LoginPermission.findOne({ user: user._id });
+    const requireEmailVerification = loginPermission?.emailVerification ?? true;
 
     if (!requireEmailVerification) {
       return res.status(403).json({ message: "Email verification not required for this user" });
     }
 
-    // Generate new OTP and overwrite previous OTP
     const otp = generateOtp();
-    otpStore[userId] = { otp: String(otp), expiresAt: Date.now() + OTP_EXPIRY };
 
-    // Send email
+    // Overwrite old OTP
+    await EmailOtp.findOneAndUpdate(
+      { userId },
+      { otp: String(otp), expiresAt: new Date(Date.now() + OTP_EXPIRY) },
+      { upsert: true, new: true }
+    );
+
     await sendOtpMail(user.email, otp);
 
     return res.status(200).json({
       message: "OTP resent successfully to registered email",
       email: user.email,
+      otp: otp, // ⚠️ remove in production
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error resending OTP:", err);
     return res.status(500).json({ message: "Failed to resend OTP", error: err.message });
   }
 };
-
