@@ -10,8 +10,9 @@ exports.AddWhatsapp = async(req, res)=>{
     }
     
     try {
-        // check duplicate record
-        const existingTelegram = await whatsappModel.findOne({ name: req.body.name });
+        // check duplicate record and Convert name to lowercase for consistent comparison
+        const name = req.body.name.toLowerCase();
+        const existingTelegram = await whatsappModel.findOne({ name: name  });
         if (existingTelegram) {
             return res.status(409).json({ status: 'error', message: 'Whatsapp name already exists!', });
         }
