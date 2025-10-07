@@ -3,6 +3,7 @@ const OtherAccount = require('../models/otheraccount');
 const AgentAccountModel = require('../models/agentaccount');
 const LogController = require("../controller/log");
 const agentaccount = require('../models/agentaccount');
+const mongoose = require('mongoose');
 
 exports.AddAccount = async(req,res,next)=>{
     try {
@@ -141,7 +142,7 @@ exports.ShowPassword = async (req, res) => {
 
     // 2️⃣ If not found, check in OtherAccount model
     if (!accountRow) {
-      accountRow = await OtherAccountModel.findOne({ _id: id }).select("account_password").lean();
+      accountRow = await OtherAccount.findOne({ _id: id }).select("account_password").lean();
     }
 
     // 3️⃣ If still not found, return 404
