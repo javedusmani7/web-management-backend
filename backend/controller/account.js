@@ -130,24 +130,31 @@ exports.DeleteAccount = async(req,res,next)=>{
 }
 
 exports.ShowPassword = async (req, res) => {
-    try {
-        const { id } = req.body;
-        if (!id) {
-            return res.status(400).send({ status: 'error', message: 'Account ID is required.' });
-        }
-
-        // check if account exists
-        const accountRow = await AccountModel.findOne({ _id: id }).select("account_password").lean();
-        if (!accountRow) {
-            return res.status(404).send({ status: 'Not Found', message: 'Account not found, Invalid ID!' });
-        }
-
-        // return result
-        res.send({ status: 'success', data: accountRow });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).send({ status: 'error', message: error.message });
+  try {
+    const { id } = req.body;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send({ status: 'error', message: 'Valid Account ID is required.' });
     }
+
+    // 1️⃣ Check in Account model
+    let accountRow = await AccountModel.findOne({ _id: id }).select("account_password").lean();
+
+    // 2️⃣ If not found, check in OtherAccount model
+    if (!accountRow) {
+      accountRow = await OtherAccountModel.findOne({ _id: id }).select("account_password").lean();
+    }
+
+    // 3️⃣ If still not found, return 404
+    if (!accountRow) {
+      return res.status(404).send({ status: 'Not Found', message: 'Account not found, Invalid ID!' });
+    }
+
+    // 4️⃣ Return result
+    return res.send({ status: 'success', data: accountRow });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ status: 'error', message: error.message });
+  }
 };
 
 
