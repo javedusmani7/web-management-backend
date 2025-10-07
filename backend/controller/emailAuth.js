@@ -93,20 +93,24 @@ exports.verifyEmailOtp = async (req, res) => {
     // Verify OTP
     const stored = otpStore[userId];
     if (!stored) return res.status(401).json({ message: "OTP expired or not found" });
-    if (Date.now() > stored.expiresAt) {
+
+    // ✅ Use safe timestamp comparison
+    const now = Date.now();
+    if (now > Number(stored.expiresAt)) {
       delete otpStore[userId];
       return res.status(401).json({ message: "OTP expired" });
     }
+
     if (stored.otp !== String(otp)) {
       return res.status(403).json({ message: "Invalid OTP" });
     }
+
     delete otpStore[userId]; // remove OTP after use
 
     // Fetch login permissions
     const loginPermission = await LoginPermission.findOne({ user: user._id });
     const requireGoogleAuth = loginPermission?.googleAuthVerification || false;
 
-    // 1️⃣ If Google Auth required → continue to next step
     if (requireGoogleAuth) {
       return res.status(200).send({
         message: "Email OTP verified successfully. Google OTP required next.",
@@ -119,16 +123,17 @@ exports.verifyEmailOtp = async (req, res) => {
       });
     }
 
-    // 2️⃣ Else → generate final token and login success
-   return res.status(200).send({
-  message: "Email verified successfully",
-  ...generateAuthResponse(user),
-});
+    // Generate final token and login success
+    return res.status(200).send({
+      message: "Email verified successfully",
+      ...generateAuthResponse(user),
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Failed to verify OTP", error: err.message });
   }
 };
+
 
 
 /**
