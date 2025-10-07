@@ -15,7 +15,12 @@ router.put('/permissions/:userId',check_auth,AuthController.UserPermission)
 router.get('/checkUserId/:userId',check_auth, AuthController.CheckUserId);
 router.get('/checkEmail/:email',check_auth, AuthController.CheckEmail);
 router.get('/checkNumber/:number',check_auth, AuthController.CheckNumber);
-router.post('/user-status',check_auth,AuthController.UserStatus);
+router.post(
+  '/user-status',
+  check_auth,       // validate JWT
+  verifyGoogleOtp,  // validate logged-in user's Google OTP
+  AuthController.UserStatus
+);
 router.post(
   '/active-status',
   check_auth,       // validate JWT
