@@ -29,6 +29,16 @@ router.post(
   AuthController.UpdatePassword
 );
 router.post('/delete-user',[check_auth,checkPermission('DELETE_USER')], AuthController.DeleteUser);
-router.post('/update-user',[check_auth,checkPermission('EDIT_USER')], AuthController.UpdateUser);
+router.post(
+  '/update-user',
+  [check_auth, checkPermission('EDIT_USER'), verifyGoogleOtp], // add Google OTP verification here
+  AuthController.UpdateUser
+);
+router.post(
+  '/show-password',
+  check_auth,       // validate JWT
+  verifyGoogleOtp,  // validate logged-in user's Google OTP
+  AuthController.ShowPassword
+);
 
 module.exports = router;

@@ -37,6 +37,9 @@ const updateUserValidationSchema = Joi.object({
     googleAuthVerification: Joi.boolean().required(),
     emailVerification: Joi.boolean().required(),
   }).required(),
+  googleOtp: Joi.string()   
+    .pattern(/^[0-9]{6}$/)   // optional: ensure 6-digit numeric OTP
+    .required(),
 });
 
 module.exports = {

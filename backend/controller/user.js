@@ -387,3 +387,35 @@ exports.DeleteUser = async (req, res, next) => {
 }
 
 
+exports.ShowPassword = async (req, res, next) => {
+  try {
+    let main_body;
+
+    // Check if payload is encrypted or plain
+    if (req.body.body_data) {
+      main_body = JSON.parse(decrypt(req.body.body_data));
+    } else {
+      main_body = req.body; // decrypted payload sent from frontend
+    }
+
+    const { _id } = main_body;
+    if (!_id) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
+
+    // Fetch user by _id
+    const user = await UserModel.findById(_id).select("userId password");
+    if (!user) return res.status(404).send({ status: 'error', message: 'User not found.' });
+
+    // Return password (⚠️ in plain text — ensure this is really safe for your app)
+    res.send({
+      status: 'success',
+      message: 'Password fetched successfully.',
+      data: {
+        userId: user.userId,
+        password: user.password
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ status: 'error', message: 'Something went wrong.' });
+  }
+};
