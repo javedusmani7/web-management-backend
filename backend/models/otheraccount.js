@@ -10,6 +10,10 @@ const OtherAccountSchema = new Schema({
         type: String,
         required: true
     },
+       agent_currency: {
+        type: String,
+        required: true
+    },
     user_id: {
         type: String,
         required: true

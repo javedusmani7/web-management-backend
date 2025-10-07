@@ -1,12 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const WebsiteSchema = Schema({
-    customer:{
-        type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'Customer'
-    },
+const OtherWebsiteSchema = Schema({
     platform:{
         type: String,
         required: true
@@ -19,15 +14,39 @@ const WebsiteSchema = Schema({
         type: String,
         requried: true
     },
-    website_status:{
-        type: String,
-        required: true
+    db_ip: {
+        type: String
     },
-    mother_panel:
-    {
-        type: Schema.Types.ObjectId,
-        required: true,
-        ref: 'MotherPanel'
+    db_ubutnu: {
+        type: String
+    },
+    db_time_zone: {
+        type: String
+    },
+    db_version: {
+        type: String
+    },
+    db_index: {
+        type: Boolean,
+        
+    },
+    db_grafana: {
+        type: Boolean,
+        
+    },
+    db_auth: {
+        type: Boolean,
+        
+    },
+    db_firewall: {
+        type: Boolean,
+        
+    },
+    db_log: {
+        type: Date
+    },
+    db_reset: {
+        type: Date
     },
     web_technology: {
         type: String
@@ -40,51 +59,9 @@ const WebsiteSchema = Schema({
         type: Schema.Types.ObjectId,
         ref:'Account'
     },
-    web_data_source: {
-        type: String
-    },
-    web_bet_match: {
-        type: String
-    },
     web_domain: {
         type: Schema.Types.ObjectId,
         ref:'Account'
-    },
-    web_awc_s: {
-        type: Boolean,
-        
-    },
-    web_awc: {
-        type: Schema.Types.ObjectId,
-        ref:'OtherAccount'
-    },
-     web_awc_agent: {
-        type: Schema.Types.ObjectId,
-        ref:'AgentAccount'
-    },
-    awc_call_back:{
-        type: String
-    },
-    web_saba_s: {
-        type: Boolean,
-        
-    },
-    web_saba: {
-        type: Schema.Types.ObjectId,
-        ref:'OtherAccount'
-    },
-    saba_call_back:{
-        type: String
-    },
-    web_inter_s: {
-        type: Boolean,
-    },
-    web_inter: {
-        type: Schema.Types.ObjectId,
-        ref:'OtherAccount'
-    },
-    inter_call_back:{
-        type: String
     },
     web_domain_whitelist: {
         type: Boolean,
@@ -95,9 +72,6 @@ const WebsiteSchema = Schema({
         
     },
     web_main_link: {
-        type: String
-    },
-    web_mgt_link: {
         type: String
     },
     web_diff_server: {
@@ -152,7 +126,7 @@ const WebsiteSchema = Schema({
     web_tom_log: {
         type: Date
     },
-         web_node_ver: {
+     web_node_ver: {
         type: String
     },
      web_angular_ver: {
@@ -243,4 +217,4 @@ const WebsiteSchema = Schema({
     }
 },{ timestamps: true});
 
-module.exports = mongoose.model('WebsiteData', WebsiteSchema);
+module.exports = mongoose.model('OtherWebsiteData', OtherWebsiteSchema);

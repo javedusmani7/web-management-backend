@@ -16,6 +16,7 @@ router.get('/show-password/:id',[check_auth,checkPermission('VIEW_ACCOUNT')], Ac
 
 router.post('/addotherAccount',[check_auth,checkPermission('ADD_ACCOUNT')],AccountController.AddMasterAccount);
 router.get('/master-account-list',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.MasterAccountList);
+router.post('/get-awc-agents',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.AwcAgentList)
 router.post('/update-master',[check_auth,checkPermission('EDIT_ACCOUNT')], AccountController.UpdateMasterAccount);
 router.post('/delete-master-account',[check_auth,checkPermission('DELETE_ACCOUNT')], AccountController.DeleteMasterAccount);
 

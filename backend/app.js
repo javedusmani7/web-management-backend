@@ -11,7 +11,7 @@ require("dotenv").config();
 const app = express();
 
 
-const url = process.env.MONGO_URL;
+const url = process.env.MONGO_URL_DEV;
 mongoose.connect(url)
     .then(() => {
         console.log('Connected to database!');
