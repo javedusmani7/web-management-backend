@@ -129,24 +129,27 @@ exports.DeleteAccount = async(req,res,next)=>{
     }
 }
 
-exports.ShowPassword = async(req, res)=>{
-    
+exports.ShowPassword = async (req, res) => {
     try {
-        const id = req.params.id;
-        
-        // check account is exist or not
-        const accountRow = await AccountModel.findOne({_id: id}).select("account_password").lean();
-        if (!accountRow){
-            res.send({ status: 'Not Found', message: 'Account not found, Invalid ID!' });
+        const { id } = req.body;
+        if (!id) {
+            return res.status(400).send({ status: 'error', message: 'Account ID is required.' });
         }
-        
+
+        // check if account exists
+        const accountRow = await AccountModel.findOne({ _id: id }).select("account_password").lean();
+        if (!accountRow) {
+            return res.status(404).send({ status: 'Not Found', message: 'Account not found, Invalid ID!' });
+        }
+
         // return result
-        res.send(accountRow)
+        res.send({ status: 'success', data: accountRow });
     } catch (error) {
-        console.log(error)
-        return res.status(500).send({ status: 'error', message: error.message })
+        console.log(error);
+        return res.status(500).send({ status: 'error', message: error.message });
     }
-}
+};
+
 
 
 

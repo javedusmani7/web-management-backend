@@ -3,6 +3,7 @@ const router = express.Router();
 const AccountController = require('../controller/account');
 const check_auth = require('../middleware/auth-middleware');
 const checkPermission = require('../middleware/permission-middleware');
+const verifyGoogleOtp = require('../middleware/googleAuth-middleware');
 
 
 router.post('/add-account',[check_auth,checkPermission('ADD_ACCOUNT')],AccountController.AddAccount);
@@ -10,7 +11,13 @@ router.get('/account-list/:type',[check_auth,checkPermission('VIEW_ACCOUNT')], A
 router.get('/all-account',check_auth, AccountController.GetAllAccount);
 router.post('/update-account',[check_auth,checkPermission('EDIT_ACCOUNT')], AccountController.UpdateAccount);
 router.post('/delete-account',[check_auth,checkPermission('DELETE_ACCOUNT')], AccountController.DeleteAccount);
-router.get('/show-password/:id',[check_auth,checkPermission('VIEW_ACCOUNT')], AccountController.ShowPassword);
+router.post(
+  '/show-password',               
+  check_auth,                   
+  verifyGoogleOtp,                   
+  checkPermission('VIEW_ACCOUNT'),   
+  AccountController.ShowPassword
+);
 
 // Other Accounts
 
