@@ -11,7 +11,8 @@ exports.AddTelegram = async(req, res)=>{
     
     try {
         // check duplicate record
-        const existingTelegram = await telegramModel.findOne({ name: req.body.name });
+        const name = req.body.name.toLowerCase();
+        const existingTelegram = await telegramModel.findOne({ name: name });
         if (existingTelegram) {
             return res.status(409).json({ status: 'error', message: 'Telegram name already exists!', });
         }
