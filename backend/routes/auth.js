@@ -33,7 +33,7 @@ router.post(
   verifyGoogleOtp,
   AuthController.UpdatePassword
 );
-router.post('/delete-user',[check_auth,checkPermission('DELETE_USER')], AuthController.DeleteUser);
+router.post('/delete-user',[check_auth,checkPermission('DELETE_USER'), verifyGoogleOtp], AuthController.DeleteUser);
 router.post(
   '/update-user',
   [check_auth, checkPermission('EDIT_USER'), verifyGoogleOtp], // add Google OTP verification here
