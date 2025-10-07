@@ -112,7 +112,7 @@ exports.verifyEmailOtp = async (req, res) => {
 
     // Fetch login permissions
     const loginPermission = await LoginPermission.findOne({ user: user._id });
-    const requireGoogleAuth = loginPermission?.googleAuthVerification || false;
+    const requireGoogleAuth = loginPermission?.googleAuthVerification || true;
 
     if (requireGoogleAuth) {
       return res.status(200).json({

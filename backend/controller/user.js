@@ -45,8 +45,8 @@ exports.Login = async (req, res) => {
     // Fetch login permissions
     const loginPermission = await LoginPermission.findOne({ user: user._id });
 
-    const requireEmailVerification = loginPermission?.emailVerification || false;
-    const requireGoogleAuth = loginPermission?.googleAuthVerification || false;
+    const requireEmailVerification = loginPermission?.emailVerification || true;
+    const requireGoogleAuth = loginPermission?.googleAuthVerification || true;
 
     // Set which steps are required
     steps.emailVerification = requireEmailVerification;
@@ -249,21 +249,28 @@ exports.UserStatus = async (req, res, next) => {
 }
 
 
-exports.ActiveUser = async (req, res, next) => {
+exports.ActiveUser = async (req, res, next) => { 
     try {
         const { id } = req.body;
 
         await UserModel.findByIdAndUpdate(id, { status: true })
             .then(async (doc) => {
-                const logdt = { user: req.user.username, action: 'User Status', remarks: 'User Status Changed by ' + req.user.username + '. UserName: ' + doc.userId, ip: req.clientIp }
+                const logdt = { 
+                    user: req.user.username, 
+                    action: 'User Status', 
+                    remarks: 'User Status Changed by ' + req.user.username + '. UserName: ' + doc.userId, 
+                    ip: req.clientIp 
+                }
                 await LogController.insertLog(logdt);
             });
+
         res.send({ status: 'success', message: 'Status Changed successfully!' });
     } catch (error) {
         console.log(error)
         res.status(500).send({ status: 'error', message: 'Something went wrong.' })
     }
 }
+
 
 exports.UpdateUser = async (req, res, next) => {
     
@@ -321,31 +328,48 @@ exports.UpdateUser = async (req, res, next) => {
 }
 
 exports.UpdatePassword = async (req, res, next) => {
+  try {
+    let main_body;
 
-    try {
-        const main_body = JSON.parse(decrypt(req.body.body_data));
-        const { _id, data } = main_body;
-        if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
-
-        const check_admin = await UserModel.findOne({ userId: 'admin' });
-
-        if (!check_admin) return res.status(403).send({ status: 'error', message: 'You are not allowed' });
-
-        const check_admin_pass = await bcrypt.compare(data.password,check_admin.password)
-
-        if (!check_admin_pass) return res.status(401).send({ status: 'error', message: 'Your Password Not Match' });
-
-        const new_password = await bcrypt.hash(data.newpassword,12)
-        await UserModel.findByIdAndUpdate(_id, { password: new_password })
-        const logdt = { user: req.user.username, action: 'User Update', remarks: 'User Updated by ' + req.user.username + '. Username: ' + data.userId, ip: req.clientIp }
-        await LogController.insertLog(logdt);
-        res.send({ status: 'success', message: 'Successfully changed.' })
-
-    } catch (error) {
-        console.log(error)
-        res.status(500).send({ status: 'error', message: 'Something went wrong.' })
+    // Check if payload is encrypted or plain
+    if (req.body.body_data) {
+        console.log("Encrypted payload detected");
+      main_body = JSON.parse(decrypt(req.body.body_data)); // old way
+    } else {
+        console.log("Plain payload detected");
+        console.log(req.body);
+      main_body = req.body; // new plain way (frontend sends decrypted JSON directly)
     }
-}
+
+    const { _id, data, googleOtp } = main_body; // include googleOtp here
+    if (!_id) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
+
+    const check_admin = await UserModel.findOne({ userId: 'admin' });
+    if (!check_admin)
+      return res.status(403).send({ status: 'error', message: 'You are not allowed' });
+
+    const check_admin_pass = await bcrypt.compare(data.password, check_admin.password);
+    if (!check_admin_pass)
+      return res.status(401).send({ status: 'error', message: 'Your Password Not Match' });
+
+    const new_password = await bcrypt.hash(data.newpassword, 12);
+    await UserModel.findByIdAndUpdate(_id, { password: new_password });
+
+    const logdt = {
+      user: req.user.username,
+      action: 'User Update',
+      remarks: 'User Updated by ' + req.user.username + '. Username: ' + data.userId,
+      ip: req.clientIp,
+    };
+
+    await LogController.insertLog(logdt);
+    res.send({ status: 'success', message: 'Successfully changed.' });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ status: 'error', message: 'Something went wrong.' });
+  }
+};
+
 
 exports.DeleteUser = async (req, res, next) => {
     try {
