@@ -10,6 +10,12 @@ exports.AddTelegram = async(req, res)=>{
     }
     
     try {
+        // check duplicate record
+        const existingTelegram = await telegramModel.findOne({ name: req.body.name });
+        if (existingTelegram) {
+            return res.status(409).json({ status: 'error', message: 'Telegram name already exists!', });
+        }
+
         const telegram = await telegramModel.create(req.body);
         const logdt = {user:req.user.username, action: 'Telegram Create', remarks:'telegram channel created by '+ req.user.username, ip: req.clientIp}
         await LogController.insertLog(logdt);

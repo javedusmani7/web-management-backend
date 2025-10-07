@@ -10,6 +10,11 @@ exports.AddWhatsapp = async(req, res)=>{
     }
     
     try {
+        // check duplicate record
+        const existingTelegram = await whatsappModel.findOne({ name: req.body.name });
+        if (existingTelegram) {
+            return res.status(409).json({ status: 'error', message: 'Whatsapp name already exists!', });
+        }
         const whatsapp = await whatsappModel.create(req.body);
         const logdt = {user:req.user.username, action: 'Whatsapp Create', remarks:'Whatsapp channel created by '+ req.user.username, ip: req.clientIp}
         await LogController.insertLog(logdt);
