@@ -2,6 +2,7 @@ const User = require("../models/user");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const mongoose = require("mongoose");
+const EmailOtp = require("../models/emailOtp");
 const jwt = require("jsonwebtoken");
 const LoginPermission = require("../models/loginPermission");
 const { generateAuthResponse } = require("../../helper/authResponse");
@@ -101,7 +102,9 @@ exports.verifyGoogleAuthOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP and userId required" });
     }
 
-    const user = await User.findById(id).select("userId email type permissions status googleAuth");
+    const user = await User.findById(id).select(
+      "userId email type permissions status googleAuth"
+    );
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const googleAuth = user.googleAuth ? JSON.parse(user.googleAuth) : null;
@@ -120,17 +123,31 @@ exports.verifyGoogleAuthOtp = async (req, res) => {
 
     if (!verified) return res.status(403).json({ message: "Invalid OTP" });
 
-    // Save permanently if first time setup
+    // Save secret permanently if this is first-time setup
     if (!googleAuth && secret) {
-      await User.updateOne({ _id: id }, { $set: { googleAuth: JSON.stringify({ base32: secret }) } });
+      await User.updateOne(
+        { _id: id },
+        { $set: { googleAuth: JSON.stringify({ base32: secret }) } }
+      );
     }
 
-    // Check if email verification was required but already done
-    const loginPermission = await LoginPermission.findOne({ user: user._id });
-    const requireEmailVerification = loginPermission?.emailVerification || false;
+    // 🔍 Infer if email was already verified
+    // If no active EmailOtp record → treat email as already verified
+    const activeEmailOtp = await EmailOtp.findOne({ userId: id });
+    const emailVerified = !activeEmailOtp; // true if no OTP pending
 
-    //If email verification is required but not yet done
-    if (requireEmailVerification) {
+    // ✅ Final decision logic
+    if (emailVerified) {
+      // Both verifications complete → issue final token
+      return res.status(200).send({
+        message: "Google OTP verified successfully",
+        ...generateAuthResponse(user, {
+          emailVerification: false,
+          google2FAVerification: false,
+        }),
+      });
+    } else {
+      // Email verification still pending
       return res.status(200).send({
         message: "Google OTP verified. Email OTP required next.",
         otp_required: true,
@@ -141,12 +158,6 @@ exports.verifyGoogleAuthOtp = async (req, res) => {
         },
       });
     }
-
-    // 2️⃣ Else → final login success
-    return res.status(200).send({
-  message: "Google OTP verified successfully",
-  ...generateAuthResponse(user),
-});
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
