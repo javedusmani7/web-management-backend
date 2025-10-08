@@ -10,13 +10,16 @@ const AgentAccountSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref:'OtherAccount'
     },
-    website_name: {
-        type: String,
-        required: true
-    },
     agent_name: {
         type: String,
         required: true
+    },
+      agent_currency: {
+        type: String,
+        required: true
+    },
+      cert_id: {
+        type: String,
     },
     user_id: {
         type: String,

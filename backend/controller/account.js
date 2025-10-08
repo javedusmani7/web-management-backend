@@ -284,10 +284,10 @@ exports.DeleteMasterAccount = async(req,res,next)=>{
 
 exports.AddAgentAccount = async(req,res,next)=>{
     try {
-        const {master_account_name, website_name,backoffice_url, account_password,agent_name, user_id,company_name} = req.body;
+        const {master_account_name, website_name,backoffice_url, account_password,agent_name, user_id,company_name,agent_currency,cert_id} = req.body;
 
                 let account = new AgentAccountModel({
-                    master_account_name: master_account_name, company_name: company_name, backoffice_url: backoffice_url, account_password: account_password, agent_name: agent_name, user_id: user_id, website_name: website_name
+                    master_account_name: master_account_name, company_name: company_name, backoffice_url: backoffice_url, account_password: account_password, agent_name: agent_name, user_id: user_id,agent_currency ,cert_id
                 })
                 await account.save();
                 const logdt = {user:req.user.username, action: 'Agent Account Create', remarks:'Agent Account created by '+req.user.username+'. Account Name: '+master_account_name, ip: req.clientIp}
@@ -302,6 +302,24 @@ exports.AddAgentAccount = async(req,res,next)=>{
 exports.AgentAccountList = async(req,res,next)=>{
     try {
         const accounts = await AgentAccountModel.find({}).populate([
+            {
+                path: 'master_account_name',
+                select: 'master_account_name'
+            }
+        ]);
+        res.send(accounts)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).send({ status: 'error', message: error.message })
+    }
+}
+
+exports.AwcAgentList = async(req,res,next)=>{
+    try {
+
+        const {master} = req.body;
+
+        const accounts = await AgentAccountModel.find({master_account_name:master}).populate([
             {
                 path: 'master_account_name',
                 select: 'master_account_name'
