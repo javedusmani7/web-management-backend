@@ -7,7 +7,7 @@ const LogModel = require("../models/logs");
 const motherPanelValidationSchema = require('../validations/custom.validator');
 
 
-exports.CustomerList = async(req,res,next)=>{
+exports.CustomerList = async (req, res, next) => {
     try {
         const customers = await CustomerModel.find({});
         res.send(customers)
@@ -17,12 +17,12 @@ exports.CustomerList = async(req,res,next)=>{
     }
 }
 
-exports.AddCustomer = async(req,res,next) => {
+exports.AddCustomer = async (req, res, next) => {
     try {
-        const {name} = req.body;
-        let customer = new CustomerModel({name});
+        const { name } = req.body;
+        let customer = new CustomerModel({ name });
         await customer.save();
-        const logdt = {user:req.user.username, action: 'Customer Create', remarks:'Customer created by '+req.user.username+'. Customer Name: '+name, ip: req.clientIp}
+        const logdt = { user: req.user.username, action: 'Customer Create', remarks: 'Customer created by ' + req.user.username + '. Customer Name: ' + name, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ message: 'Successfully added!', status: 'success' });
     } catch (error) {
@@ -31,32 +31,25 @@ exports.AddCustomer = async(req,res,next) => {
     }
 }
 
-exports.CheckCustomer = async(req,res,next)=>{
+exports.CheckCustomer = async (req, res, next) => {
     try {
         const name = req.params.name;
-        const user =  await CustomerModel.findOne({name});
-        
-        if (user) {
-            // userId exists
-            res.json({ isTaken: true });
-          } else {
-            // userId does not exist
-            res.json({ isTaken: false });
-          }
-    } catch (error) {
-        
-    }
+        const user = await CustomerModel.findOne({ name });
+
+        if (user) res.json({ isTaken: true });
+        else res.json({ isTaken: false });
+    } catch (error) { }
 }
 
-exports.UpdateCustomer = async(req,res,next)=>{
+exports.UpdateCustomer = async (req, res, next) => {
     try {
-        const {_id, data} = req.body;
+        const { _id, data } = req.body;
         if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
 
-        await CustomerModel.findByIdAndUpdate(_id,{
+        await CustomerModel.findByIdAndUpdate(_id, {
             name: data.name
         });
-        const logdt = {user:req.user.username, action: 'Customer Update', remarks:'Customer Updated by '+req.user.username+'. Customer Name: '+data.name, ip: req.clientIp}
+        const logdt = { user: req.user.username, action: 'Customer Update', remarks: 'Customer Updated by ' + req.user.username + '. Customer Name: ' + data.name, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ status: 'success', message: 'Successfully changed.' })
     } catch (error) {
@@ -65,12 +58,12 @@ exports.UpdateCustomer = async(req,res,next)=>{
     }
 }
 
-exports.DeleteCustomer = async(req,res,next)=>{
+exports.DeleteCustomer = async (req, res, next) => {
     try {
         const { id } = req.body;
         await CustomerModel.findByIdAndDelete({ _id: id })
             .then(async (doc) => {
-                const logdt = { user: req.user.username, action: 'Customer Delete', remarks: 'Customer deleted by ' + req.user.username + '. Name: ' + doc.name + ' Value: ' + doc.value, ip: req.clientIp }
+                const logdt = { user: req.user.username, action: 'Customer Delete', remarks: 'Customer deleted by ' + req.user.username + '. Name: ' + doc.name, ip: req.clientIp }
                 await LogController.insertLog(logdt);
             });
         res.send({ status: 'success', message: 'Deleted successfully!' });
@@ -80,20 +73,10 @@ exports.DeleteCustomer = async(req,res,next)=>{
     }
 }
 
-exports.PanelList = async(req,res,next)=>{
-    console.log("inside panel List");
-    
+exports.PanelList = async (req, res, next) => {
+ 
     try {
-        
-        const query = {};
-
-        const panels = await PanelModel
-        .find(query)
-        .populate("server_account", "account_name")
-        .populate("cloudflore_account", "account_name")
-        .populate("domain_account", "account_name")
-        .populate("company_master_account", "master_account_name")
-        .populate("company_agent_account", "agent_name");
+        const panels = await PanelModel.find({});
         res.send(panels)
     } catch (error) {
         console.log(error);
@@ -101,39 +84,29 @@ exports.PanelList = async(req,res,next)=>{
     }
 }
 
-
-exports.AddPanel = async(req,res,next) => {
-    // add validation
+exports.AddPanel = async (req, res, next) => {
     const { error } = motherPanelValidationSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: 'error', message: error.details[0].message });
     }
 
     try {
-        const {name, url_address1, url_address2, country, server_account, cloudflore_account, domain_account, company_name, company_master_account, company_agent_account} = req.body;
+        const { name, url_address1, url_address2, country } = req.body;
 
-        // check duplicate records
-        const panelRow = await PanelModel.findOne({name: name});
-        if (panelRow){
+        const panelRow = await PanelModel.findOne({ name: name });
+        if (panelRow) {
             return res.status(400).send({ status: 'Bad-Request', message: 'Panel Name already exist.' })
         }
 
-        // create record
         let panel = new PanelModel({
             name,
             url_address1,
             url_address2,
             country,
-            server_account,
-            cloudflore_account,
-            domain_account,
-            company_name,
-            company_master_account,
-            company_agent_account,
         });
 
         await panel.save();
-        const logdt = {user:req.user.username, action: 'MotherPanel Create', remarks:'MotherPanel created by '+req.user.username+'. MotherPanel: '+name, ip: req.clientIp}
+        const logdt = { user: req.user.username, action: 'MotherPanel Create', remarks: 'MotherPanel created by ' + req.user.username + '. MotherPanel: ' + name, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ message: 'Successfully added!', status: 'success' });
     } catch (error) {
@@ -142,32 +115,28 @@ exports.AddPanel = async(req,res,next) => {
     }
 }
 
-exports.CheckPanel = async(req,res,next)=> {
+exports.CheckPanel = async (req, res, next) => {
     try {
         const name = req.params.panel;
-        const user =  await PanelModel.findOne({name});
-        
-        if (user) {
-            // userId exists
-            res.json({ isTaken: true });
-          } else {
-            // userId does not exist
-            res.json({ isTaken: false });
-          }
-    } catch (error) {
-        
-    }
+        const user = await PanelModel.findOne({ name });
+
+        if (user) res.json({ isTaken: true });
+        else res.json({ isTaken: false });
+    } catch (error) { }
 }
 
-exports.UpdatePanel = async(req,res,next)=>{
+exports.UpdatePanel = async (req, res, next) => {
     try {
-        const {_id, data} = req.body;
+        const { _id, data } = req.body;
         if (!(_id)) return res.status(400).send({ status: 'error', message: 'Invalid request.' });
 
-        await PanelModel.findByIdAndUpdate(_id,{
-            name: data.name
+        await PanelModel.findByIdAndUpdate(_id, {
+            name: data.name,
+            url_address1: data.url_address1,
+            url_address2: data.url_address2,
+            country: data.country
         });
-        const logdt = {user:req.user.username, action: 'MotherPanel Update', remarks:'MotherPanel Updated by '+req.user.username+'. MotherPanel: '+data.name, ip: req.clientIp}
+        const logdt = { user: req.user.username, action: 'MotherPanel Update', remarks: 'MotherPanel Updated by ' + req.user.username + '. MotherPanel: ' + data.name, ip: req.clientIp }
         await LogController.insertLog(logdt);
         res.send({ status: 'success', message: 'Successfully changed.' })
     } catch (error) {
@@ -176,12 +145,12 @@ exports.UpdatePanel = async(req,res,next)=>{
     }
 }
 
-exports.DeletePanel = async(req,res,next)=>{
+exports.DeletePanel = async (req, res, next) => {
     try {
         const { id } = req.body;
         await PanelModel.findByIdAndDelete({ _id: id })
             .then(async (doc) => {
-                const logdt = { user: req.user.username, action: 'MotherPanel Delete', remarks: 'MotherPanel deleted by ' + req.user.username + '. Name: ' + doc.name + ' Value: ' + doc.value, ip: req.clientIp }
+            const logdt = { user: req.user.username, action: 'MotherPanel Delete', remarks: 'MotherPanel deleted by ' + req.user.username + '. Name: ' + doc.name + ' Value: ' + doc.value, ip: req.clientIp }
                 await LogController.insertLog(logdt);
             });
         res.send({ status: 'success', message: 'Deleted successfully!' });
@@ -191,7 +160,7 @@ exports.DeletePanel = async(req,res,next)=>{
     }
 }
 
-exports.getLogs = async(req,res,next) => {
+exports.getLogs = async (req, res, next) => {
     try {
         const logs = await LogController.getLogs();
         res.send(logs);
@@ -201,15 +170,11 @@ exports.getLogs = async(req,res,next) => {
     }
 }
 
-exports.UserLog = async(req,res,next) => {
+exports.UserLog = async (req, res, next) => {
     try {
-
         const user_id = req.params.userId;
-
-        const logs = await LogModel.find({user:user_id});
-
+        const logs = await LogModel.find({ user: user_id });
         res.send(logs)
-        
     } catch (error) {
         console.log('getLogs', error);
         res.status(500).send({ status: "failed", message: "Something went wrong." })

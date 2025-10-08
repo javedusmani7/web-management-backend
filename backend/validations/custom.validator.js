@@ -11,16 +11,9 @@ const objectId = (value, helpers) => {
 
 const motherPanelValidationSchema = Joi.object({
   name: Joi.string().required(),
-
   url_address1: Joi.string().required(),
-  url_address2: Joi.string().allow(null, ''), // allow null or empty string
-  country: Joi.string().required(),
-  server_account: Joi.string().custom(objectId).required(),
-  cloudflore_account: Joi.string().custom(objectId).required(),
-  domain_account: Joi.string().custom(objectId).required(),
-  company_name: Joi.string().required(),
-  company_master_account: Joi.string().custom(objectId).required(),
-  company_agent_account: Joi.string().custom(objectId).required(),
+  url_address2: Joi.string().allow(null, ''), 
+  country: Joi.string().required()
 });
 
 module.exports = motherPanelValidationSchema;
