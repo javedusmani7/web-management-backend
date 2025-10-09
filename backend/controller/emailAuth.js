@@ -70,8 +70,7 @@ exports.sendEmailOtp = async (req, res) => {
 
     return res.status(200).json({
       message: "OTP sent successfully to registered email",
-      email: user.email,
-      otp: otp, // ⚠️ remove in production
+      email: user.email
     });
   } catch (err) {
     console.error("Error sending OTP:", err);
@@ -168,8 +167,7 @@ exports.resendEmailOtp = async (req, res) => {
 
     return res.status(200).json({
       message: "OTP resent successfully to registered email",
-      email: user.email,
-      otp: otp, // ⚠️ remove in production
+      email: user.email
     });
   } catch (err) {
     console.error("Error resending OTP:", err);
